@@ -13,6 +13,11 @@ Offline address derivation (UFVK + index -> `j1...`) for Juno Cash.
 
 UFVKs are sensitive (watch-only, but reveal incoming transaction details). Avoid logging or sharing them.
 
+Notes:
+
+- `--uvfk` is accepted as an alias for `--ufvk`.
+- Exchanges must persistently map derived deposit addresses (or their derivation indices) to internal accounts; on-chain data is encrypted and you cannot “match addresses” the Bitcoin way.
+
 ## Build & test
 
 Requirements: Go + Rust toolchain.
