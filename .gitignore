@@ -3,6 +3,8 @@
 /tmp/
 /tmp-*/
 
+# Rust
+/rust/**/target/
+
 # OS
 .DS_Store
-
