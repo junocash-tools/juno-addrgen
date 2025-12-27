@@ -42,7 +42,7 @@ func TestDerive_Plain(t *testing.T) {
 	d := &fakeDeriver{deriveAddr: "j1abc"}
 	var out, err bytes.Buffer
 
-	code := RunWithIO([]string{"derive", "--ufvk", "  jview1test  ", "--index", "5"}, d, &out, &err)
+	code := RunWithIO([]string{"derive", "--uvfk", "  jview1test  ", "--index", "5"}, d, &out, &err)
 	if code != 0 {
 		t.Fatalf("unexpected exit code: %d (stderr=%q)", code, err.String())
 	}

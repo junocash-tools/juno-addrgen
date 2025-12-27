@@ -72,6 +72,7 @@ func runDerive(args []string, deriver Deriver, stdout, stderr io.Writer) int {
 	var jsonOut bool
 
 	fs.StringVar(&ufvkFlag, "ufvk", "", "UFVK (jview1...)")
+	fs.StringVar(&ufvkFlag, "uvfk", "", "Alias for --ufvk")
 	fs.StringVar(&ufvkFile, "ufvk-file", "", "Read UFVK from file")
 	fs.StringVar(&ufvkEnv, "ufvk-env", "", "Read UFVK from env var (name)")
 	fs.Uint64Var(&index, "index", 0, "Diversifier index (0..2^32-1)")
@@ -122,6 +123,7 @@ func runBatch(args []string, deriver Deriver, stdout, stderr io.Writer) int {
 	var jsonOut bool
 
 	fs.StringVar(&ufvkFlag, "ufvk", "", "UFVK (jview1...)")
+	fs.StringVar(&ufvkFlag, "uvfk", "", "Alias for --ufvk")
 	fs.StringVar(&ufvkFile, "ufvk-file", "", "Read UFVK from file")
 	fs.StringVar(&ufvkEnv, "ufvk-env", "", "Read UFVK from env var (name)")
 	fs.Uint64Var(&start, "start", 0, "Start diversifier index (0..2^32-1)")
