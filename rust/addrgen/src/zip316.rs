@@ -146,7 +146,7 @@ fn decode_zip316_bech32m(hrp_expected: &str, s: &str) -> Result<Vec<u8>, Zip316E
     Ok(bytes)
 }
 
-pub(crate) fn encode_unified_container(
+pub fn encode_unified_container(
     hrp: &str,
     typecode: u64,
     value: &[u8],
@@ -158,7 +158,7 @@ pub(crate) fn encode_unified_container(
     encode_zip316_bech32m(hrp, &payload)
 }
 
-pub(crate) fn decode_single_tlv_container(
+pub fn decode_single_tlv_container(
     hrp_expected: &str,
     s: &str,
 ) -> Result<(u64, Vec<u8>), Zip316Error> {
@@ -175,4 +175,3 @@ pub(crate) fn decode_single_tlv_container(
     }
     Ok((typecode, rest.to_vec()))
 }
-

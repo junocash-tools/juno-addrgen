@@ -3,11 +3,13 @@ use core::ffi::c_char;
 use orchard::keys::{FullViewingKey, Scope};
 use serde::Serialize;
 
-mod zip316;
+pub mod zip316;
 
-const HRP_JUNO_UFVK: &str = "jview";
-const HRP_JUNO_UA: &str = "j";
-const TYPECODE_ORCHARD: u64 = 0x03;
+pub const HRP_JUNO_UFVK: &str = "jview";
+pub const HRP_JUNO_UA: &str = "j";
+pub const TYPECODE_ORCHARD: u64 = 0x03;
+
+pub const JUNO_COIN_TYPE: u32 = 8133;
 
 const MAX_BATCH_COUNT: u32 = 100_000;
 
@@ -212,8 +214,6 @@ mod tests {
     use super::*;
 
     use zip32::AccountId;
-
-    const JUNO_COIN_TYPE: u32 = 8133;
 
     #[test]
     fn derives_address_from_generated_ufvk() {
