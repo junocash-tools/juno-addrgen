@@ -88,7 +88,7 @@ func TestCLI_DeriveAndBatch(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &resp); err != nil {
 		t.Fatalf("invalid json: %v", err)
 	}
-	if resp["status"] != "ok" || resp["address"] != v.Addresses[0] {
+	if resp["version"] != "v1" || resp["status"] != "ok" || resp["address"] != v.Addresses[0] {
 		t.Fatalf("unexpected json: %v", resp)
 	}
 

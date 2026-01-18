@@ -16,6 +16,8 @@ type Deriver interface {
 	Batch(ufvk string, start uint32, count uint32) ([]string, error)
 }
 
+const jsonVersionV1 = "v1"
+
 func Run(args []string, deriver Deriver) int {
 	return RunWithIO(args, deriver, os.Stdout, os.Stderr)
 }
@@ -101,6 +103,7 @@ func runDerive(args []string, deriver Deriver, stdout, stderr io.Writer) int {
 
 	if jsonOut {
 		_ = json.NewEncoder(stdout).Encode(map[string]any{
+			"version": jsonVersionV1,
 			"status":  "ok",
 			"address": address,
 		})
@@ -157,6 +160,7 @@ func runBatch(args []string, deriver Deriver, stdout, stderr io.Writer) int {
 
 	if jsonOut {
 		_ = json.NewEncoder(stdout).Encode(map[string]any{
+			"version":   jsonVersionV1,
 			"status":    "ok",
 			"start":     s,
 			"count":     c,
@@ -228,8 +232,10 @@ func writeDeriverErr(stdout, stderr io.Writer, jsonOut bool, err error) int {
 func writeErr(stdout, stderr io.Writer, jsonOut bool, code, message string) int {
 	if jsonOut {
 		_ = json.NewEncoder(stdout).Encode(map[string]any{
-			"status": "err",
-			"error":  code,
+			"version": jsonVersionV1,
+			"status":  "err",
+			"error":   code,
+			"message": message,
 		})
 		return 1
 	}

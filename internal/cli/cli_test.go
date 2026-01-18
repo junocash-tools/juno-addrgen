@@ -73,7 +73,7 @@ func TestDerive_JSON(t *testing.T) {
 	if e := json.Unmarshal(out.Bytes(), &v); e != nil {
 		t.Fatalf("invalid json: %v (%q)", e, out.String())
 	}
-	if v["status"] != "ok" || v["address"] != "j1abc" {
+	if v["version"] != "v1" || v["status"] != "ok" || v["address"] != "j1abc" {
 		t.Fatalf("unexpected json: %v", v)
 	}
 }
@@ -101,6 +101,30 @@ func TestDerive_IndexOutOfRange(t *testing.T) {
 	}
 	if !strings.Contains(err.String(), "index_invalid") {
 		t.Fatalf("unexpected stderr: %q", err.String())
+	}
+}
+
+func TestDerive_JSON_ErrorIncludesMessage(t *testing.T) {
+	d := &fakeDeriver{deriveAddr: "j1abc"}
+	var out, err bytes.Buffer
+
+	code := RunWithIO([]string{"derive", "--ufvk", "jview1test", "--index", "4294967296", "--json"}, d, &out, &err)
+	if code != 1 {
+		t.Fatalf("unexpected exit code: %d", code)
+	}
+	if err.Len() != 0 {
+		t.Fatalf("unexpected stderr: %q", err.String())
+	}
+
+	var v map[string]any
+	if e := json.Unmarshal(out.Bytes(), &v); e != nil {
+		t.Fatalf("invalid json: %v (%q)", e, out.String())
+	}
+	if v["version"] != "v1" || v["status"] != "err" || v["error"] != "index_invalid" {
+		t.Fatalf("unexpected json: %v", v)
+	}
+	if v["message"] == "" {
+		t.Fatalf("expected error message, got: %v", v)
 	}
 }
 
