@@ -52,11 +52,11 @@ func RunWithIO(args []string, deriver Deriver, stdout, stderr io.Writer) int {
 func writeUsage(w io.Writer) {
 	fmt.Fprintln(w, "juno-addrgen")
 	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "Offline address derivation (UFVK + index -> j1...) for Juno Cash.")
+	fmt.Fprintln(w, "Offline address derivation (UFVK + index -> j*1...) for Juno Cash.")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "Usage:")
-	fmt.Fprintln(w, "  juno-addrgen derive --ufvk <jview1...> --index <n> [--json]")
-	fmt.Fprintln(w, "  juno-addrgen batch  --ufvk <jview1...> --start <n> --count <k> [--json]")
+	fmt.Fprintln(w, "  juno-addrgen derive --ufvk <jview*1...> --index <n> [--json]")
+	fmt.Fprintln(w, "  juno-addrgen batch  --ufvk <jview*1...> --start <n> --count <k> [--json]")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "Notes:")
 	fmt.Fprintln(w, "  - UFVKs are sensitive (watch-only, but reveal incoming transaction details).")
@@ -73,7 +73,7 @@ func runDerive(args []string, deriver Deriver, stdout, stderr io.Writer) int {
 	var index uint64
 	var jsonOut bool
 
-	fs.StringVar(&ufvkFlag, "ufvk", "", "UFVK (jview1...)")
+	fs.StringVar(&ufvkFlag, "ufvk", "", "UFVK (jview*1...)")
 	fs.StringVar(&ufvkFlag, "uvfk", "", "Alias for --ufvk")
 	fs.StringVar(&ufvkFile, "ufvk-file", "", "Read UFVK from file")
 	fs.StringVar(&ufvkEnv, "ufvk-env", "", "Read UFVK from env var (name)")
@@ -125,7 +125,7 @@ func runBatch(args []string, deriver Deriver, stdout, stderr io.Writer) int {
 	var count uint64
 	var jsonOut bool
 
-	fs.StringVar(&ufvkFlag, "ufvk", "", "UFVK (jview1...)")
+	fs.StringVar(&ufvkFlag, "ufvk", "", "UFVK (jview*1...)")
 	fs.StringVar(&ufvkFlag, "uvfk", "", "Alias for --ufvk")
 	fs.StringVar(&ufvkFile, "ufvk-file", "", "Read UFVK from file")
 	fs.StringVar(&ufvkEnv, "ufvk-env", "", "Read UFVK from env var (name)")

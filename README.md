@@ -1,6 +1,6 @@
 # juno-addrgen
 
-Offline address derivation (UFVK + index -> `j1...`) for Juno Cash.
+Offline address derivation (UFVK + index -> `j1...` / `jtest1...` / `jregtest1...`) for Juno Cash.
 
 ## API stability
 
@@ -10,9 +10,9 @@ Offline address derivation (UFVK + index -> `j1...`) for Juno Cash.
 ## Usage
 
 - Derive one address:
-  - `juno-addrgen derive --ufvk <jview1...> --index 0`
+  - `juno-addrgen derive --ufvk <jview*1...> --index 0`
 - Derive a batch:
-  - `juno-addrgen batch --ufvk <jview1...> --start 0 --count 10`
+  - `juno-addrgen batch --ufvk <jview*1...> --start 0 --count 10`
 - JSON output:
   - add `--json`
  - Read UFVK from a file:
@@ -25,6 +25,7 @@ UFVKs are sensitive (watch-only, but reveal incoming transaction details). Avoid
 Notes:
 
 - `--uvfk` is accepted as an alias for `--ufvk`.
+- The UFVK HRP determines the output address HRP (e.g. `jview1...` → `j1...`, `jviewtest1...` → `jtest1...`, `jviewregtest1...` → `jregtest1...`).
 - Exchanges must persistently map derived deposit addresses (or their derivation indices) to internal accounts; on-chain data is encrypted and you cannot “match addresses” the Bitcoin way.
 
 ## JSON output

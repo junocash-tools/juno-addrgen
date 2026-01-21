@@ -6,7 +6,11 @@ use serde::Serialize;
 pub mod zip316;
 
 pub const HRP_JUNO_UFVK: &str = "jview";
+pub const HRP_JUNO_UFVK_TESTNET: &str = "jviewtest";
+pub const HRP_JUNO_UFVK_REGTEST: &str = "jviewregtest";
 pub const HRP_JUNO_UA: &str = "j";
+pub const HRP_JUNO_UA_TESTNET: &str = "jtest";
+pub const HRP_JUNO_UA_REGTEST: &str = "jregtest";
 pub const TYPECODE_ORCHARD: u64 = 0x03;
 
 pub const JUNO_COIN_TYPE: u32 = 8133;
@@ -46,46 +50,73 @@ impl ErrorCode {
     }
 }
 
-fn decode_fvk_from_ufvk(ufvk: &str) -> Result<FullViewingKey, ErrorCode> {
+const UFVK_HRP_TO_UA_HRP: [(&str, &str); 3] = [
+    (HRP_JUNO_UFVK, HRP_JUNO_UA),
+    (HRP_JUNO_UFVK_TESTNET, HRP_JUNO_UA_TESTNET),
+    (HRP_JUNO_UFVK_REGTEST, HRP_JUNO_UA_REGTEST),
+];
+
+fn decode_fvk_from_ufvk(ufvk: &str) -> Result<(&'static str, FullViewingKey), ErrorCode> {
     let ufvk = ufvk.trim();
     if ufvk.is_empty() {
         return Err(ErrorCode::UfvkEmpty);
     }
 
-    let items = zip316::decode_tlv_container(HRP_JUNO_UFVK, ufvk)
-        .map_err(map_zip316_err)?;
+    let mut last_err: Option<zip316::Zip316Error> = None;
+    for (ufvk_hrp, ua_hrp) in UFVK_HRP_TO_UA_HRP {
+        match zip316::decode_tlv_container(ufvk_hrp, ufvk) {
+            Ok(items) => {
+                let mut orchard_value: Option<Vec<u8>> = None;
+                for (typecode, value) in items {
+                    if typecode != TYPECODE_ORCHARD {
+                        continue;
+                    }
+                    if orchard_value.is_some() {
+                        return Err(ErrorCode::UfvkTlvInvalid);
+                    }
+                    orchard_value = Some(value);
+                }
 
-    let mut orchard_value: Option<Vec<u8>> = None;
-    for (typecode, value) in items {
-        if typecode != TYPECODE_ORCHARD {
-            continue;
+                let value = orchard_value.ok_or(ErrorCode::UfvkTypecodeUnsupported)?;
+
+                if value.len() != 96 {
+                    return Err(ErrorCode::UfvkValueLenInvalid);
+                }
+                let fvk_bytes: [u8; 96] =
+                    value.try_into().map_err(|_| ErrorCode::UfvkValueLenInvalid)?;
+
+                let fvk = FullViewingKey::from_bytes(&fvk_bytes)
+                    .ok_or(ErrorCode::UfvkFvkBytesInvalid)?;
+                return Ok((ua_hrp, fvk));
+            }
+            Err(zip316::Zip316Error::HrpMismatch) => {
+                last_err = Some(zip316::Zip316Error::HrpMismatch);
+                continue;
+            }
+            Err(e) => return Err(map_zip316_err(e)),
         }
-        if orchard_value.is_some() {
-            return Err(ErrorCode::UfvkTlvInvalid);
-        }
-        orchard_value = Some(value);
     }
 
-    let value = orchard_value.ok_or(ErrorCode::UfvkTypecodeUnsupported)?;
-
-    if value.len() != 96 {
-        return Err(ErrorCode::UfvkValueLenInvalid);
+    if matches!(last_err, Some(zip316::Zip316Error::HrpMismatch)) {
+        return Err(ErrorCode::UfvkHrpMismatch);
     }
-    let fvk_bytes: [u8; 96] = value.try_into().map_err(|_| ErrorCode::UfvkValueLenInvalid)?;
-
-    FullViewingKey::from_bytes(&fvk_bytes).ok_or(ErrorCode::UfvkFvkBytesInvalid)
+    Err(ErrorCode::UfvkInvalidBech32m)
 }
 
-fn derive_address_from_fvk(fvk: &FullViewingKey, index: u32) -> Result<String, ErrorCode> {
+fn derive_address_from_fvk(
+    fvk: &FullViewingKey,
+    ua_hrp: &'static str,
+    index: u32,
+) -> Result<String, ErrorCode> {
     let addr = fvk.address_at(index, Scope::External);
     let raw = addr.to_raw_address_bytes();
-    zip316::encode_unified_container(HRP_JUNO_UA, TYPECODE_ORCHARD, &raw)
+    zip316::encode_unified_container(ua_hrp, TYPECODE_ORCHARD, &raw)
         .map_err(|_| ErrorCode::Internal)
 }
 
 fn derive_address_from_ufvk(ufvk: &str, index: u32) -> Result<String, ErrorCode> {
-    let fvk = decode_fvk_from_ufvk(ufvk)?;
-    derive_address_from_fvk(&fvk, index)
+    let (ua_hrp, fvk) = decode_fvk_from_ufvk(ufvk)?;
+    derive_address_from_fvk(&fvk, ua_hrp, index)
 }
 
 fn derive_addresses_from_ufvk(
@@ -102,10 +133,10 @@ fn derive_addresses_from_ufvk(
 
     let end_exclusive = start.checked_add(count).ok_or(ErrorCode::RangeOverflow)?;
 
-    let fvk = decode_fvk_from_ufvk(ufvk)?;
+    let (ua_hrp, fvk) = decode_fvk_from_ufvk(ufvk)?;
     let mut out = Vec::with_capacity(count as usize);
     for index in start..end_exclusive {
-        out.push(derive_address_from_fvk(&fvk, index)?);
+        out.push(derive_address_from_fvk(&fvk, ua_hrp, index)?);
     }
     Ok(out)
 }
@@ -224,6 +255,38 @@ mod tests {
     use super::*;
 
     use zip32::AccountId;
+
+    #[test]
+    fn supports_all_ufvk_hrps_and_ua_hrps() {
+        let ufvk_main = "jview1js32zyfmmd4yzqy04pf9qwqrj47w3uvekjzs7pzfh2ars2v0ggzg74cd39lw9px0tr0nq7e86xevgx7fqxzslmlfqcaw28wj75prfgd0xdae7fywxl99n035kejzpj9upard7kegh3epjna7efmzy392cyr7a2hs4khc00zq0j2jqnnnz0usmuc92r5un";
+
+        let items = zip316::decode_tlv_container(HRP_JUNO_UFVK, ufvk_main).expect("decode ufvk");
+        let orchard_value = items
+            .iter()
+            .find(|(t, _)| *t == TYPECODE_ORCHARD)
+            .map(|(_, v)| v.as_slice())
+            .expect("orchard tlv")
+            .to_vec();
+        let fvk_bytes: [u8; 96] = orchard_value.as_slice().try_into().expect("fvk bytes");
+        let fvk = FullViewingKey::from_bytes(&fvk_bytes).expect("fvk");
+
+        let addr0_raw = fvk
+            .address_at(0u32, Scope::External)
+            .to_raw_address_bytes();
+
+        for (ufvk_hrp, ua_hrp) in UFVK_HRP_TO_UA_HRP {
+            let tlv = zip316::Tlv {
+                typecode: TYPECODE_ORCHARD,
+                value: orchard_value.as_slice(),
+            };
+            let ufvk = zip316::encode_tlv_container(ufvk_hrp, &[tlv]).expect("encode ufvk");
+
+            let got = derive_address_from_ufvk(&ufvk, 0).expect("derive addr");
+            let want =
+                zip316::encode_unified_container(ua_hrp, TYPECODE_ORCHARD, &addr0_raw).expect("ua");
+            assert_eq!(got, want);
+        }
+    }
 
     #[test]
     fn derives_address_from_generated_ufvk() {
